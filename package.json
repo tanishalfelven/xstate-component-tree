@@ -23,6 +23,7 @@
     "rollup-plugin-terser": "^7.0.2",
     "shx": "^0.3.2",
     "snapshot-diff": "^0.8.1",
+    "tsc": "^2.0.3",
     "xstate": "^4.13.0"
   },
   "peerDependencies": {

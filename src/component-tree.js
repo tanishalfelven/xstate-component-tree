@@ -1,3 +1,17 @@
+/**
+ * @typedef {import("xstate").Interpreter} Interpreter
+*/
+
+/**
+ * @template TComponent
+ *
+ * @typedef {Object} TreeNode
+ * @property {string} path
+ * @property {TComponent} component
+ * @property {TreeNode<TComponent>[]} children: []
+ * @property {any | false} props: false
+*/
+
 const loadComponent = async ({ item, load, context, event }) => {
     const result = await load(context, event);
 
@@ -21,8 +35,22 @@ const loadChild = async ({ child, root }) => {
     root.children.push(...children);
 };
 
+/**
+ * @template TComponent
+*/
 class ComponentTree {
-    constructor(interpreter, callback, { cache = true, stable = false } = false) {
+    /**
+     * @typedef {Object} Options
+     * @property {boolean} [cache]
+     * @property {boolean} [stable]
+    */
+   
+    /**
+     * @param {Interpreter} interpreter
+     * @param {(_: TreeNode<TComponent>) => void} callback
+     * @param {Options} [options={}]
+     */
+    constructor(interpreter, callback, { cache = true, stable = false } = {}) {
         // Storing off args + options
         this._interpreter = interpreter;
         this._callback = callback;
@@ -55,7 +83,7 @@ class ComponentTree {
         this._tree = [];
 
         // Last event this saw, used to re-create the tree when a child transitions
-        this._data = false;
+        this._data = {};
 
         // Get goin
         this._prep();
@@ -82,6 +110,8 @@ class ComponentTree {
     // well as prepping any load functions for usage later
     _prep() {
         const { _paths, _invokables, _interpreter, _caching } = this;
+        
+        // @ts-ignore because I'm using private state
         const { idMap : ids } = _interpreter.machine;
 
         // xstate maps ids to state nodes, but the value object only
@@ -116,6 +146,9 @@ class ComponentTree {
     }
 
     // Walk a machine via BFS, collecting meta information to build a tree
+    /**
+     * @returns Promise<TreeNode>[]
+     */
     // eslint-disable-next-line max-statements, complexity
     async _walk() {
         const {
@@ -168,7 +201,7 @@ class ComponentTree {
 
             if(_paths.has(path)) {
                 const details = _paths.get(path);
-                let cached = false;
+                let cached = {};
 
                 if(_cache.has(path)) {
                     cached = _cache.get(path);
